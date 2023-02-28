@@ -1,0 +1,36 @@
+version: '3.1'
+
+services:
+  postgres:
+    container_name: postgres_container
+    image: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /data/postgres
+    volumes:
+       - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    
+  postgres_pavl:
+    image: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5444:5444"
+
+volumes:
+<<<<<<< HEAD
+    postgres:
+    pgadmin:
+
+=======
+  postgres:
+  postgres_pavl:
+  pgadmin:
+>>>>>>> aa9bde920ba5591f2526865fcac65ed2a336d429

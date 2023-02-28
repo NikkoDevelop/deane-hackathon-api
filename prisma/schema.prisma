@@ -1,0 +1,275 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MetaTagsEnum {
+  Robots
+  Viewport
+  Charset
+  Content_type
+  Refresh
+  Author
+  Copyright
+  Title
+  Description
+  Keywords
+}
+
+enum ExhibitorCategoryEnum {
+  business
+  development
+  design
+  management
+  analytic
+  education
+  content
+  IT
+}
+
+enum MediaType {
+  image
+  video
+}
+
+enum VisibleCostEnum {
+  yes
+  no
+  text_only
+}
+
+enum ConnectionTypeEnum {
+  parent
+  child
+}
+
+enum ProductTypeEnum {
+  product
+  service
+}
+
+enum PossibilityOfPurchaseEnum {
+  wholesale
+  retail
+}
+
+enum PaymentMethodEnum {
+  cash
+  non_cash
+}
+
+enum DeliveryMethodEnum {
+  courier
+  fast_courier
+  mail
+  cdek
+}
+
+enum StandardEnum {
+  gost
+  iso
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  login        String     @unique
+  password     String
+  email        String     @unique
+  tokenVersion Int?
+  exhibitor    Exhibitor?
+}
+
+model Media {
+  id                      Int         @id @default(autoincrement())
+  createdAt               DateTime?   @default(now())
+  url                     String      @unique @db.VarChar(512)
+  type                    MediaType
+  isApproved              Boolean     @default(false)
+  exhibitor_for_logo      Exhibitor[] @relation(name: "logo")
+  exhibitor_for_main_logo Exhibitor[] @relation(name: "main_logo")
+  partner                 Partner[]
+  feedback                Feedback[]
+  product_logo            Product[]   @relation(name: "video")
+  product_medias          Product[]   @relation(name: "medias")
+  is_moderate             Boolean     @default(false)
+  moderate_verdict        Boolean     @default(false)
+  moderate_message        String?
+}
+
+model Catalog {
+  id               Int             @id @default(autoincrement())
+  categories       Category[]
+  products         Product[]
+  is_visible_cost  VisibleCostEnum
+  exhibitor        Exhibitor[]
+  author           Exhibitor       @relation(name: "author", fields: [authorId], references: [id], onDelete: Cascade)
+  authorId         Int
+  is_moderate      Boolean         @default(false)
+  moderate_verdict Boolean         @default(false)
+  moderate_message String?
+}
+
+model Exhibitor {
+  id                     Int                   @id @default(autoincrement())
+  name                   String                @db.VarChar(512)
+  meta_tags              MetaTagsEnum[]
+  category               ExhibitorCategoryEnum
+  description            String?               @db.Text()
+  owner                  User?                 @relation(fields: [userId], references: [id])
+  company_description    String?               @db.Text()
+  logo                   Media?                @relation(name: "logo", fields: [logoId], references: [id])
+  logoId                 Int?
+  main_media             Media?                @relation(name: "main_logo", fields: [mail_logoId], references: [id])
+  mail_logoId            Int?
+  site_url               String?               @db.VarChar(512)
+  login                  String?
+  password               String?
+  email                  String[]
+  notification_email     String?
+  phone                  String?
+  contact_person         String?
+  inn                    String?
+  legal_adress           String?
+  factory_adress         String?
+  location_table         String?
+  partners_table         String?
+  clients                String?
+  catalog                Catalog?              @relation(fields: [catalogId], references: [id])
+  portfolio              String?
+  import_substitution    String?
+  is_import_substitution Boolean?              @default(false)
+  catalogId              Int?
+  our_feedback           Feedback[]
+  us_feedback            Feedback[]            @relation(name: "To_Whom")
+  userId                 Int?                  @unique
+  products               Product[]
+  locations              Location[]
+  partners               Partner[]
+  categories             Category[]
+  cases                  Case[]
+  catalogs               Catalog[]             @relation(name: "author")
+  is_moderate            Boolean?              @default(false)
+  moderate_verdict       Boolean?              @default(false)
+  moderate_message       String?
+}
+
+model Location {
+  id               Int       @id @default(autoincrement())
+  adress           String?
+  gps_coords       String?
+  name             String?
+  cooperation_type String?
+  partner_site_url String?
+  exhibitor        Exhibitor @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  exhibitorId      Int
+  is_visible       Boolean   @default(false)
+  is_moderate      Boolean   @default(false)
+  moderate_verdict Boolean   @default(false)
+  moderate_message String?
+}
+
+model Partner {
+  id               Int       @id @default(autoincrement())
+  name             String?
+  logo             Media?    @relation(fields: [mediaId], references: [id])
+  display_order    Int?      @default(autoincrement())
+  is_published     Boolean?  @default(false)
+  mediaId          Int?
+  exhibitor        Exhibitor @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  exhibitorId      Int
+  is_moderate      Boolean   @default(false)
+  moderate_verdict Boolean   @default(false)
+  moderate_message String?
+}
+
+model Feedback {
+  id               Int        @id @default(autoincrement())
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt()
+  text             String?
+  rate             Int?
+  author           Exhibitor? @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  medias           Media[]
+  company          Exhibitor? @relation(name: "To_Whom", fields: [companyId], references: [id], onDelete: Cascade)
+  companyId        Int?
+  is_published     Boolean?   @default(false)
+  exhibitorId      Int?
+  is_moderate      Boolean    @default(false)
+  moderate_verdict Boolean    @default(false)
+  moderate_message String?
+}
+
+model Category {
+  id               Int                 @id @default(autoincrement())
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt()
+  name             String?
+  connection_type  ConnectionTypeEnum?
+  sub_category     Int?
+  is_published     Boolean?            @default(false)
+  catalog          Catalog?            @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  catalogId        Int?
+  product          Product[]
+  exhibitor        Exhibitor?          @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  exhibitorId      Int?
+  is_moderate      Boolean             @default(false)
+  moderate_verdict Boolean             @default(false)
+  moderate_message String?
+}
+
+model Product {
+  id                      Int                         @id @default(autoincrement())
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime                    @updatedAt()
+  type                    ProductTypeEnum?
+  manufacturer            String?
+  brand                   String?
+  name                    String?
+  medias                  Media[]                     @relation(name: "medias")
+  video                   Media?                      @relation(name: "video", fields: [mediaId], references: [id])
+  description             String?
+  cost                    Float?
+  meta_tags               MetaTagsEnum[]
+  category                Category?                   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  possibility_of_purchase PossibilityOfPurchaseEnum[]
+  min_batch               Int?
+  payment_method          PaymentMethodEnum[]
+  delivery_method         DeliveryMethodEnum[]
+  standards               StandardEnum[]
+  analogs                 String?
+  is_published            Boolean?                    @default(false)
+  is_import_substitution  Boolean?                    @default(false)
+  Catalog                 Catalog?                    @relation(fields: [catalogId], references: [id], onDelete: Cascade)
+  catalogId               Int?
+  mediaId                 Int?
+  categoryId              Int?
+  exhibitor               Exhibitor?                  @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  exhibitorId             Int?
+  is_moderate             Boolean                     @default(false)
+  moderate_verdict        Boolean                     @default(false)
+  moderate_message        String?
+}
+
+model Case {
+  id                     Int        @id @default(autoincrement())
+  createdAt              DateTime   @default(now())
+  updatedAt              DateTime   @updatedAt()
+  partner_site_url       String?
+  content_type           MediaType?
+  html_content           String?
+  video_url              String?
+  is_published           Boolean?   @default(false)
+  is_import_substitution Boolean?   @default(false)
+  exhibitor              Exhibitor? @relation(fields: [exhibitorId], references: [id], onDelete: Cascade)
+  exhibitorId            Int?
+  is_moderate            Boolean    @default(false)
+  moderate_verdict       Boolean    @default(false)
+  moderate_message       String?
+}
